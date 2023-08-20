@@ -40,5 +40,7 @@ Thumbs.db
 
 .sqlite3
 
+# Data
+datasets/
 
 
