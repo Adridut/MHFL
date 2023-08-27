@@ -35,8 +35,8 @@ def load_ASERTAIN(selected_modalities=['ECG', 'GSR'],  label='valence', train_ra
 
     selected_modalities.append('Personality')
     
-    selected_index = [i for i in range(len(columns)) 
-							if (not is_column_feature(columns, i)) or ((is_column_feature(columns, i) and (columns[i].split('_')[0] in selected_modalities))) ]
+    # Select index of selected features, personality, labels and ids
+    selected_index = select_idex(columns, selected_modalities)
     
     data = data[:,selected_index]
 
@@ -143,6 +143,9 @@ def preprocessing(X, y, train_mask, valid_mask, test_mask):
     X = inf_remover(X, train_mask, valid_mask, test_mask, y)
     X = scale_data(X, train_mask, valid_mask, test_mask, y)
     return X
+
+def select_idex(columns, selected_modalities):
+    return [i for i in range(len(columns)) if (not is_column_feature(columns, i)) or ((is_column_feature(columns, i) and (columns[i].split('_')[0] in selected_modalities))) ]
 
 
 if __name__ == "__main__":
