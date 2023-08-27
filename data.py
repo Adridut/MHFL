@@ -6,21 +6,15 @@ from itertools import groupby
 import random
 from sklearn.impute import SimpleImputer
 
-
-
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'datasets')
 ASCERTAIN_DIR = os.path.join(DATA_DIR, 'ASCERTAIN_Features')
 ASCERTAIN_FILE = os.path.join(ASCERTAIN_DIR, 'ascertain_multimodal.csv')
 
 def load_ASERTAIN(selected_modalities=['ECG', 'GSR'],  label='valence', train_ratio=60, val_ratio=20, test_ratio=20, trial=0):
-
-    # Change seed for each trial
-    random.seed(trial)
     
     n_subjects = 58
     n_cases = 36
     n_traits = 5
-
     if label == 'valence':
         label_index = 3
     elif label == 'arousal':
@@ -34,66 +28,28 @@ def load_ASERTAIN(selected_modalities=['ECG', 'GSR'],  label='valence', train_ra
         data = np.asarray(data[1:]).astype(float)
 
     selected_modalities.append('Personality')
-    
-    # Select index of selected features, personality, labels and ids
     selected_index = select_idex(columns, selected_modalities)
-    
     data = data[:,selected_index]
 
     """
     split train and test dataset subject-wise based on self.split_ratio
     group data upon subject id
     """
+    # Change seed for each trial
+    random.seed(trial)
     data_grouped = [list(it) for k, it in groupby(data.tolist())]
     random.shuffle(data_grouped)
 
-
-    subject_attributes = []
-    video_attributes = []
-    low_personality_attributes = []
-    high_personality_attributes = []
-
-    for i in range(n_subjects):
-        subject_id = []
-        subject_attributes.append(subject_id)
-
-    for i in range(n_cases):
-        video_id = []
-        video_attributes.append(video_id)
-
-    for i in range(n_traits):
-        personality_id = []
-        low_personality_attributes.append(personality_id)
-        high_personality_attributes.append(personality_id)
-
-
     all_data = [item for sublist in data_grouped for item in sublist]
     all_data = np.asarray(all_data)
+
+    subject_attributes, video_attributes, low_personality_attributes, high_personality_attributes = generate_attributes(all_data, n_subjects, n_cases, n_traits)
     
-
-    for i in range(len(all_data[0:, 4:])):
-        subject_id = int(all_data[i][0])
-        subject_attributes[subject_id].append(i)
-        case_id = int(all_data[i][1])
-        video_attributes[case_id].append(i)
-        for j in range(n_traits):
-            personality_trait = all_data[i][all_data.shape[1]-j-1]
-            if j == 0 or j == 3:
-                threshold = 4
-            else:
-                threshold = 5
-            if personality_trait < threshold:
-                low_personality_attributes[j].append(i)
-            else:
-                high_personality_attributes[j].append(i)
-
     # Remove ids, labels and personalities from features
     X = all_data[0:, 4:all_data.shape[1]-5]
     y = all_data[0:, label_index]
 
-
     train_mask, test_mask, valid_mask = generate_masks(X, train_ratio, test_ratio)
-
     X = preprocessing(X, y, train_mask, valid_mask, test_mask)
 
     return X, y, train_mask, test_mask, valid_mask, subject_attributes, video_attributes, low_personality_attributes, high_personality_attributes
@@ -145,8 +101,44 @@ def preprocessing(X, y, train_mask, valid_mask, test_mask):
     return X
 
 def select_idex(columns, selected_modalities):
+    # Select index of selected features, personality, labels and ids
     return [i for i in range(len(columns)) if (not is_column_feature(columns, i)) or ((is_column_feature(columns, i) and (columns[i].split('_')[0] in selected_modalities))) ]
 
+
+def generate_attributes(all_data, n_subjects, n_cases, n_traits):
+    # Generate attributes connecting nodes having identical subjects and videos and subjects sharing the same personality traits
+    subject_attributes = []
+    video_attributes = []
+    low_personality_attributes = []
+    high_personality_attributes = []
+    for i in range(n_subjects):
+        subject_id = []
+        subject_attributes.append(subject_id)
+    for i in range(n_cases):
+        video_id = []
+        video_attributes.append(video_id)
+    for i in range(n_traits):
+        personality_id = []
+        low_personality_attributes.append(personality_id)
+        high_personality_attributes.append(personality_id)
+        
+    for i in range(len(all_data[0:, 4:])):
+        subject_id = int(all_data[i][0])
+        subject_attributes[subject_id].append(i)
+        case_id = int(all_data[i][1])
+        video_attributes[case_id].append(i)
+        for j in range(n_traits):
+            personality_trait = all_data[i][all_data.shape[1]-j-1]
+            if j == 0 or j == 3:
+                threshold = 4
+            else:
+                threshold = 5
+            if personality_trait < threshold:
+                low_personality_attributes[j].append(i)
+            else:
+                high_personality_attributes[j].append(i)
+
+    return subject_attributes, video_attributes, low_personality_attributes, high_personality_attributes
 
 if __name__ == "__main__":
     pass
