@@ -1,12 +1,12 @@
 from data import load_ASERTAIN
 from utils import print_log
 
-
 from sklearn.naive_bayes import GaussianNB
 from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, accuracy_score
 
+import json
 
 
 def train(selected_modalities, label,  model, trials, test_size):
@@ -27,12 +27,18 @@ def train(selected_modalities, label,  model, trials, test_size):
 
 if __name__ == "__main__":
 
-    #Params
-    selected_modalities = [['ECG', 'GSR', 'EMO', 'EEG']]
-    label = 'valence'
-    model = svm.SVC()
-    # model = GaussianNB()
-    trials = 10
-    test_size = 0.2
+    # Open and read the JSON configuration file
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+
+    selected_modalities = config['modalities']
+    label = config['label']
+    if config['model'] == "svm":
+        model = svm.SVC()
+    else:
+        model = GaussianNB()
+
+    trials = config['trials']
+    test_size = config['test_size']
 
     train(selected_modalities, label, model, trials, test_size)

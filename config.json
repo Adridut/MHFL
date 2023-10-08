@@ -1,0 +1,7 @@
+{
+    "modalities": [["ECG", "GSR", "EMO", "EEG"]],
+    "label": "valence", 
+    "model": "svm",
+    "trials": 10,
+    "test_size": 0.2
+}
